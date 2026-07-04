@@ -688,7 +688,7 @@ function goToUpload(){ switchTab('data'); }
 
 /* ---------- formatting ---------- */
 const fmtNum = n => Intl.NumberFormat('en-US', {notation: n>=100000?'compact':'standard', maximumFractionDigits:1}).format(n||0);
-const fmtMoney = n => '$' + Intl.NumberFormat('en-US', {notation: n>=100000?'compact':'standard', maximumFractionDigits:1}).format(n||0);
+const fmtMoney = n => 'Rp' + Intl.NumberFormat('id-ID', {notation: n>=100000?'compact':'standard', maximumFractionDigits:1}).format(n||0);
 
 /* ---------- charts ---------- */
 let chartRefs = {};
