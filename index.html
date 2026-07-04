@@ -522,6 +522,36 @@ let detectedType = 'creator';
 
 function normHeader(h){ return String(h||'').toLowerCase().replace(/[_\-]/g,' ').replace(/\s+/g,' ').trim(); }
 
+function parseLocaleNumber(raw){
+  let s = String(raw).trim().replace(/[^\d.,\-]/g, '');
+  if (s === '' || s === '-') return 0;
+  const hasComma = s.includes(',');
+  const hasDot = s.includes('.');
+  if (hasComma && hasDot){
+    const lastComma = s.lastIndexOf(',');
+    const lastDot = s.lastIndexOf('.');
+    if (lastComma > lastDot){
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (hasComma && !hasDot){
+    const parts = s.split(',');
+    if (parts.length > 2 || parts[parts.length-1].length === 3){
+      s = s.replace(/,/g, '');
+    } else {
+      s = s.replace(',', '.');
+    }
+  } else if (hasDot && !hasComma){
+    const parts = s.split('.');
+    if (parts.length > 2 || parts[parts.length-1].length === 3){
+      s = s.replace(/\./g, '');
+    }
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
 function guessType(headers){
   const norm = headers.map(normHeader);
   const creatorHit = ['gmv','commission','affiliate','kol','order','sales','creator'].some(k=>norm.some(h=>h.includes(k)));
@@ -653,7 +683,7 @@ function confirmImport(){
       Object.keys(mapping).forEach(k=>{
         let v = r[mapping[k]];
         if (['followers','views','orders','gmv','commission','likes','comments','shares','profileViews'].includes(k)){
-          v = parseFloat(String(v).replace(/[^0-9.\-]/g,'')) || 0;
+          v = parseLocaleNumber(v);
         }
         out[k] = v;
       });
