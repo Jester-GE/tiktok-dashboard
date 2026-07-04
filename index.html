@@ -451,8 +451,48 @@
 <script>
 /* ---------- storage ---------- */
 const STORE_KEYS = { creators:'ledger_creators', analytics:'ledger_analytics', uploads:'ledger_uploads' };
-function load(key){ try{ return JSON.parse(localStorage.getItem(key)) || []; }catch(e){ return []; } }
-function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+const memoryStore = {};
+let storagePersistent = true;
+(function testStorage(){
+  try{
+    const t = '__ledger_test__';
+    localStorage.setItem(t, '1');
+    localStorage.removeItem(t);
+  }catch(e){
+    storagePersistent = false;
+  }
+})();
+
+function load(key){
+  try{
+    if (!storagePersistent) return memoryStore[key] || [];
+    return JSON.parse(localStorage.getItem(key)) || [];
+  }catch(e){
+    console.error('Load failed for', key, e);
+    return memoryStore[key] || [];
+  }
+}
+function save(key, val){
+  memoryStore[key] = val;
+  if (!storagePersistent) return;
+  try{
+    localStorage.setItem(key, JSON.stringify(val));
+  }catch(e){
+    console.error('Save failed for', key, e);
+    storagePersistent = false;
+    showStorageWarning();
+  }
+}
+function showStorageWarning(){
+  if (document.getElementById('storageWarning')) return;
+  const banner = document.createElement('div');
+  banner.id = 'storageWarning';
+  banner.style.cssText = 'background:var(--stamp-bg);color:var(--stamp);border:1px solid var(--stamp);border-radius:10px;padding:10px 14px;font-size:13px;margin:0 0 16px;';
+  banner.textContent = "This browser is blocking persistent storage, so your data will disappear on refresh. Try opening this page in a normal (non-private) browser tab, or over https:// instead of a local file, to keep your uploads saved.";
+  document.querySelector('.wrap').prepend(banner);
+}
+if (!storagePersistent) document.addEventListener('DOMContentLoaded', showStorageWarning);
 
 /* ---------- standard schemas ---------- */
 const CREATOR_FIELDS = [
@@ -515,23 +555,44 @@ dropzone.addEventListener('drop', e=>{ if(e.dataTransfer.files[0]) handleFile(e.
 function handleFile(file){
   pendingFilename = file.name;
   const ext = file.name.split('.').pop().toLowerCase();
-  if (ext==='csv'){
-    Papa.parse(file, { header:true, skipEmptyLines:true, complete: res=>{
-      pendingHeaders = res.meta.fields || [];
-      pendingRows = res.data;
-      openMapModal();
-    }});
-  } else {
-    const reader = new FileReader();
-    reader.onload = e=>{
-      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
-      pendingHeaders = rows.length ? Object.keys(rows[0]) : [];
-      pendingRows = rows;
-      openMapModal();
-    };
-    reader.readAsArrayBuffer(file);
+  try{
+    if (ext==='csv'){
+      Papa.parse(file, { header:true, skipEmptyLines:true, complete: res=>{
+        try{
+          pendingHeaders = res.meta.fields || [];
+          pendingRows = res.data;
+          openMapModal();
+        }catch(e){
+          console.error('Parse handling failed', e);
+          alert("Couldn't read this CSV: " + e.message);
+        }
+      }, error: err=>{
+        console.error('Papa parse error', err);
+        alert("Couldn't read this CSV: " + err.message);
+      }});
+    } else if (ext==='xlsx' || ext==='xls'){
+      const reader = new FileReader();
+      reader.onerror = ()=>{ alert("Couldn't read this file from disk. Try again."); };
+      reader.onload = e=>{
+        try{
+          const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+          pendingHeaders = rows.length ? Object.keys(rows[0]) : [];
+          pendingRows = rows;
+          openMapModal();
+        }catch(e){
+          console.error('Excel parse failed', e);
+          alert("Couldn't read this Excel file: " + e.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      alert('Use a .csv, .xlsx, or .xls file.');
+    }
+  }catch(e){
+    console.error('handleFile failed', e);
+    alert("Couldn't process this file: " + e.message);
   }
 }
 
@@ -577,33 +638,44 @@ function closeMapModal(){
   fileInput.value = '';
 }
 function confirmImport(){
-  const selects = document.querySelectorAll('#mapFields select');
-  const mapping = {};
-  selects.forEach(s=>{ if(s.value) mapping[s.dataset.field] = s.value; });
+  try{
+    const selects = document.querySelectorAll('#mapFields select');
+    const mapping = {};
+    selects.forEach(s=>{ if(s.value) mapping[s.dataset.field] = s.value; });
 
-  const normalizedRows = pendingRows.map(r=>{
-    const out = {};
-    Object.keys(mapping).forEach(k=>{
-      let v = r[mapping[k]];
-      if (['followers','views','orders','gmv','commission','likes','comments','shares','profileViews'].includes(k)){
-        v = parseFloat(String(v).replace(/[^0-9.\-]/g,'')) || 0;
-      }
-      out[k] = v;
-    });
-    return out;
-  }).filter(r=>Object.keys(r).length>0);
+    if (!Object.keys(mapping).length){
+      alert('Match at least one column before importing.');
+      return;
+    }
 
-  const key = detectedType==='creator' ? STORE_KEYS.creators : STORE_KEYS.analytics;
-  const existing = load(key);
-  save(key, existing.concat(normalizedRows));
+    const normalizedRows = pendingRows.map(r=>{
+      const out = {};
+      Object.keys(mapping).forEach(k=>{
+        let v = r[mapping[k]];
+        if (['followers','views','orders','gmv','commission','likes','comments','shares','profileViews'].includes(k)){
+          v = parseFloat(String(v).replace(/[^0-9.\-]/g,'')) || 0;
+        }
+        out[k] = v;
+      });
+      return out;
+    }).filter(r=>Object.keys(r).length>0);
 
-  const uploads = load(STORE_KEYS.uploads);
-  uploads.unshift({ id:Date.now(), filename:pendingFilename, type:detectedType, rows:normalizedRows.length, at:new Date().toISOString() });
-  save(STORE_KEYS.uploads, uploads);
+    const key = detectedType==='creator' ? STORE_KEYS.creators : STORE_KEYS.analytics;
+    const existing = load(key);
+    save(key, existing.concat(normalizedRows));
 
-  closeMapModal();
-  renderAll();
-  switchTab(detectedType==='creator' ? 'creators' : 'analytics');
+    const uploads = load(STORE_KEYS.uploads);
+    uploads.unshift({ id:Date.now(), filename:pendingFilename, type:detectedType, rows:normalizedRows.length, at:new Date().toISOString() });
+    save(STORE_KEYS.uploads, uploads);
+
+    renderAll();
+    switchTab(detectedType==='creator' ? 'creators' : 'analytics');
+  }catch(e){
+    console.error('Import failed', e);
+    alert('Something went wrong importing this file: ' + e.message);
+  }finally{
+    closeMapModal();
+  }
 }
 
 /* ---------- tabs ---------- */
