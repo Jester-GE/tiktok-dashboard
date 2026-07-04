@@ -1,0 +1,13 @@
+{
+  "name": "Creator Commerce Ledger",
+  "short_name": "Ledger",
+  "description": "TikTok Shop creator and account performance dashboard",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F1F2ED",
+  "theme_color": "#14171C",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

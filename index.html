@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Creator Commerce Ledger</title>
+<meta name="theme-color" content="#14171C">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Ledger">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F1F2ED;
+    --paper-raised: #FFFFFF;
+    --ink: #14171C;
+    --ink-soft: #5B6169;
+    --ink-faint: #9BA0A6;
+    --line: #DCDBD3;
+    --line-strong: #C3C2B7;
+    --stamp: #7A2E3B;
+    --stamp-bg: #F3E4E6;
+    --mint: #1F6F5C;
+    --mint-bg: #E3EEE9;
+    --brass: #B8862E;
+    --brass-bg: #F5EBD8;
+    --radius: 12px;
+    --serif: 'Fraunces', serif;
+    --sans: 'Inter', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--stamp);}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px;}
+
+  /* Masthead */
+  .masthead{padding:28px 20px 0;max-width:1080px;margin:0 auto;}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    display:flex;align-items:center;gap:8px;
+    margin-bottom:10px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--mint);}
+  .masthead h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(28px,4.5vw,42px);
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .masthead p{
+    color:var(--ink-soft);
+    margin:0 0 20px;
+    font-size:15px;
+    max-width:560px;
+  }
+  .masthead-row{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;}
+
+  /* Buttons */
+  .btn{
+    font-family:var(--sans);
+    font-size:14px;
+    font-weight:500;
+    padding:10px 16px;
+    border-radius:8px;
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .btn:hover{opacity:.9;}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line-strong);}
+  .btn.ghost:hover{background:rgba(20,23,28,0.04);}
+  .btn.danger{border-color:var(--stamp);color:var(--stamp);background:transparent;}
+  .btn.danger:hover{background:var(--stamp-bg);}
+  .btn.small{padding:6px 10px;font-size:12px;border-radius:6px;}
+
+  /* Ticker - signature element: perforated receipt tape */
+  .ticker-outer{margin:26px 0 6px;}
+  .ticker{
+    background:var(--ink);
+    color:var(--paper);
+    overflow:hidden;
+    position:relative;
+    border-radius:var(--radius);
+  }
+  .ticker::before,.ticker::after{
+    content:"";
+    position:absolute;left:0;right:0;height:1px;
+    background-image:repeating-linear-gradient(90deg, rgba(241,242,237,.35) 0 6px, transparent 6px 12px);
+  }
+  .ticker::before{top:0;}
+  .ticker::after{bottom:0;}
+  .ticker-track{
+    display:flex;
+    gap:0;
+    white-space:nowrap;
+    padding:14px 0;
+    animation:scroll-left 34s linear infinite;
+    width:max-content;
+  }
+  .ticker:hover .ticker-track{animation-play-state:paused;}
+  @keyframes scroll-left{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+  }
+  .ticker-item{
+    font-family:var(--mono);
+    font-size:13px;
+    padding:0 28px;
+    border-right:1px dashed rgba(241,242,237,.25);
+    display:flex;align-items:center;gap:8px;
+  }
+  .ticker-item .lbl{color:rgba(241,242,237,.6);text-transform:uppercase;font-size:10px;letter-spacing:.08em;}
+  .ticker-item .val{font-weight:500;}
+  @media (prefers-reduced-motion: reduce){ .ticker-track{animation:none;overflow-x:auto;} }
+
+  /* Tabs */
+  .tabs{
+    display:flex;gap:4px;margin:28px 0 20px;
+    border-bottom:1px solid var(--line);
+    overflow-x:auto;
+  }
+  .tab{
+    font-family:var(--sans);
+    font-size:14px;font-weight:500;
+    padding:10px 16px;
+    color:var(--ink-soft);
+    background:transparent;
+    border:none;
+    border-bottom:2px solid transparent;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .tab.active{color:var(--ink);border-bottom-color:var(--stamp);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* KPI cards */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .kpi{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .kpi .lbl{
+    font-family:var(--mono);
+    font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+  }
+  .kpi .val{
+    font-family:var(--serif);
+    font-size:26px;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
+  .kpi .sub{font-size:12px;color:var(--ink-faint);margin-top:4px;}
+
+  /* Section headers */
+  .section-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 12px;gap:12px;flex-wrap:wrap;}
+  .section-head h2{font-family:var(--serif);font-size:19px;font-weight:600;margin:0;}
+  select, input[type=text]{
+    font-family:var(--sans);font-size:13px;
+    padding:7px 10px;border-radius:7px;border:1px solid var(--line-strong);
+    background:var(--paper-raised);color:var(--ink);
+  }
+
+  /* Card / chart panel */
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:20px;
+  }
+
+  /* Ledger table */
+  table.ledger{width:100%;border-collapse:collapse;font-size:13px;}
+  table.ledger th{
+    text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--ink-soft);
+    padding:0 10px 8px;border-bottom:1px solid var(--line-strong);
+    cursor:pointer;white-space:nowrap;
+  }
+  table.ledger th.num, table.ledger td.num{text-align:right;}
+  table.ledger td{padding:10px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;}
+  table.ledger tbody tr:hover{background:rgba(20,23,28,0.03);}
+  .table-scroll{overflow-x:auto;}
+  .rank{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:20px;height:20px;border-radius:5px;
+    background:var(--brass-bg);color:var(--brass);
+    font-family:var(--mono);font-size:11px;font-weight:600;margin-right:8px;
+  }
+
+  /* Empty state */
+  .empty{
+    text-align:center;padding:48px 20px;color:var(--ink-soft);
+    border:1px dashed var(--line-strong);border-radius:var(--radius);
+    background:var(--paper-raised);
+  }
+  .empty h3{font-family:var(--serif);font-size:18px;color:var(--ink);margin:0 0 6px;}
+  .empty p{margin:0 0 16px;font-size:14px;}
+
+  /* Upload zone */
+  .dropzone{
+    border:1.5px dashed var(--line-strong);
+    border-radius:var(--radius);
+    background:var(--paper-raised);
+    padding:36px 20px;
+    text-align:center;
+    cursor:pointer;
+    margin-bottom:20px;
+  }
+  .dropzone.drag{border-color:var(--stamp);background:var(--stamp-bg);}
+  .dropzone h3{font-family:var(--serif);font-size:18px;margin:0 0 6px;}
+  .dropzone p{color:var(--ink-soft);font-size:13px;margin:0;}
+  .dropzone input{display:none;}
+
+  .badge{
+    display:inline-block;font-family:var(--mono);font-size:10px;text-transform:uppercase;
+    letter-spacing:.05em;padding:3px 8px;border-radius:5px;
+  }
+  .badge.creator{background:var(--mint-bg);color:var(--mint);}
+  .badge.analytics{background:var(--stamp-bg);color:var(--stamp);}
+
+  /* Modal */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(20,23,28,0.5);
+    align-items:center;justify-content:center;padding:20px;z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal{
+    background:var(--paper-raised);border-radius:var(--radius);
+    max-width:560px;width:100%;max-height:85vh;overflow-y:auto;
+    padding:24px;
+  }
+  .modal h3{font-family:var(--serif);font-size:20px;margin:0 0 4px;}
+  .modal .hint{color:var(--ink-soft);font-size:13px;margin:0 0 18px;}
+  .map-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .map-row .field{flex:1;font-size:13px;font-family:var(--mono);color:var(--ink-soft);}
+  .map-row select{flex:1.4;}
+  .type-choice{display:flex;gap:10px;margin-bottom:18px;}
+  .type-choice label{
+    flex:1;border:1px solid var(--line-strong);border-radius:8px;padding:12px;
+    font-size:13px;cursor:pointer;text-align:center;
+  }
+  .type-choice input{margin-right:6px;}
+  .type-choice label.checked{border-color:var(--stamp);background:var(--stamp-bg);color:var(--stamp);font-weight:500;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+
+  .upload-log{font-size:13px;}
+  .upload-log-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 0;border-bottom:1px solid var(--line);gap:10px;
+  }
+  .upload-log-row .name{font-weight:500;}
+  .upload-log-row .meta{color:var(--ink-soft);font-size:12px;}
+
+  footer{
+    text-align:center;color:var(--ink-faint);font-size:12px;
+    padding:20px;font-family:var(--mono);
+  }
+
+  @media (max-width:640px){
+    .kpi .val{font-size:22px;}
+    .masthead-row{align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="eyebrow"><span class="dot"></span> Creator commerce ledger &middot; local data</div>
+  <div class="masthead-row">
+    <div>
+      <h1>Your TikTok performance, summarized</h1>
+      <p>Upload the CSV or Excel exports from TikTok Shop and Creator Center. Everything is parsed and stored right in this browser &mdash; nothing is uploaded anywhere.</p>
+    </div>
+    <button class="btn" onclick="goToUpload()">Upload export</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="ticker-outer">
+    <div class="ticker">
+      <div class="ticker-track" id="tickerTrack"></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">Overview</button>
+    <button class="tab" data-tab="creators">Creators</button>
+    <button class="tab" data-tab="analytics">Account analytics</button>
+    <button class="tab" data-tab="data">Manage data</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="panel active" id="panel-overview">
+    <div class="kpi-grid" id="overviewKpis"></div>
+    <div id="overviewEmpty" class="empty" style="display:none;">
+      <h3>No data yet</h3>
+      <p>Upload a creator performance export or an account analytics export to see your summary here.</p>
+      <button class="btn" onclick="goToUpload()">Upload your first export</button>
+    </div>
+    <div id="overviewCharts">
+      <div class="card">
+        <div class="section-head"><h2>Top creators by GMV</h2></div>
+        <div style="position:relative;height:260px;"><canvas id="overviewCreatorChart" role="img" aria-label="Bar chart of top creators by GMV"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="section-head"><h2>Video views over time</h2></div>
+        <div style="position:relative;height:260px;"><canvas id="overviewViewsChart" role="img" aria-label="Line chart of video views over time"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATORS -->
+  <div class="panel" id="panel-creators">
+    <div id="creatorsEmpty" class="empty" style="display:none;">
+      <h3>No creator data yet</h3>
+      <p>Upload a TikTok Shop affiliate / KOL performance export to see creator rankings.</p>
+      <button class="btn" onclick="goToUpload()">Upload creator export</button>
+    </div>
+    <div id="creatorsContent">
+      <div class="kpi-grid" id="creatorsKpis"></div>
+      <div class="card">
+        <div class="section-head"><h2>Top creators by GMV</h2></div>
+        <div style="position:relative;height:280px;"><canvas id="creatorsChart" role="img" aria-label="Bar chart of top 10 creators by GMV"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="section-head">
+          <h2>Creator leaderboard</h2>
+          <select id="creatorSort">
+            <option value="gmv">Sort by GMV</option>
+            <option value="commission">Sort by commission</option>
+            <option value="orders">Sort by orders</option>
+            <option value="views">Sort by views</option>
+            <option value="followers">Sort by followers</option>
+          </select>
+        </div>
+        <div class="table-scroll">
+          <table class="ledger" id="creatorsTable">
+            <thead><tr>
+              <th>Creator</th><th class="num">Followers</th><th class="num">Views</th>
+              <th class="num">Orders</th><th class="num">GMV</th><th class="num">Commission</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="panel" id="panel-analytics">
+    <div id="analyticsEmpty" class="empty" style="display:none;">
+      <h3>No account analytics yet</h3>
+      <p>Upload a TikTok Creator Center analytics export (views, likes, comments, followers by date).</p>
+      <button class="btn" onclick="goToUpload()">Upload analytics export</button>
+    </div>
+    <div id="analyticsContent">
+      <div class="kpi-grid" id="analyticsKpis"></div>
+      <div class="card">
+        <div class="section-head"><h2>Engagement over time</h2></div>
+        <div style="position:relative;height:280px;"><canvas id="analyticsChart" role="img" aria-label="Line chart of views, likes and comments over time"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="section-head"><h2>Daily log</h2></div>
+        <div class="table-scroll">
+          <table class="ledger" id="analyticsTable">
+            <thead><tr>
+              <th>Date</th><th class="num">Views</th><th class="num">Likes</th>
+              <th class="num">Comments</th><th class="num">Shares</th><th class="num">Followers</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA -->
+  <div class="panel" id="panel-data">
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <h3>Drop a CSV or Excel file here</h3>
+      <p>Or tap to browse &mdash; .csv, .xlsx, .xls accepted</p>
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls">
+    </div>
+    <div class="card">
+      <div class="section-head">
+        <h2>Upload history</h2>
+        <button class="btn danger small" onclick="clearAllData()">Clear all data</button>
+      </div>
+      <div class="upload-log" id="uploadLog"></div>
+      <div id="uploadLogEmpty" class="empty" style="display:none;padding:24px;">
+        <p style="margin:0;">Nothing uploaded yet.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>Stored only in this browser &middot; export your files again to move data to another device</footer>
+
+<!-- Column mapping modal -->
+<div class="modal-overlay" id="mapModal">
+  <div class="modal">
+    <h3>Confirm this import</h3>
+    <p class="hint" id="mapHint">Tell us what kind of data this is, then check the column matches below.</p>
+    <div class="type-choice" id="typeChoice">
+      <label id="typeLabelCreator"><input type="radio" name="dataType" value="creator"> Creator / KOL performance</label>
+      <label id="typeLabelAnalytics"><input type="radio" name="dataType" value="analytics"> Account analytics</label>
+    </div>
+    <div id="mapFields"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeMapModal()">Cancel</button>
+      <button class="btn" onclick="confirmImport()">Import data</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ---------- storage ---------- */
+const STORE_KEYS = { creators:'ledger_creators', analytics:'ledger_analytics', uploads:'ledger_uploads' };
+function load(key){ try{ return JSON.parse(localStorage.getItem(key)) || []; }catch(e){ return []; } }
+function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+/* ---------- standard schemas ---------- */
+const CREATOR_FIELDS = [
+  {key:'creator', label:'Creator name', aliases:['creator','username','handle','author','nickname','kol','name']},
+  {key:'date', label:'Date', aliases:['date','day','period']},
+  {key:'followers', label:'Followers', aliases:['followers','follower count','fans']},
+  {key:'views', label:'Views', aliases:['views','video views','play','plays']},
+  {key:'orders', label:'Orders', aliases:['orders','order count','units sold','items sold']},
+  {key:'gmv', label:'GMV / sales', aliases:['gmv','sales','revenue','total sales','order amount']},
+  {key:'commission', label:'Commission', aliases:['commission','est. commission','commission amount','earnings']}
+];
+const ANALYTICS_FIELDS = [
+  {key:'date', label:'Date', aliases:['date','day','period']},
+  {key:'views', label:'Video views', aliases:['video views','views','play','plays']},
+  {key:'likes', label:'Likes', aliases:['likes','like count']},
+  {key:'comments', label:'Comments', aliases:['comments','comment count']},
+  {key:'shares', label:'Shares', aliases:['shares','share count']},
+  {key:'followers', label:'Followers', aliases:['followers','follower count','net followers','total followers']},
+  {key:'profileViews', label:'Profile views', aliases:['profile views']}
+];
+
+/* ---------- parsing state ---------- */
+let pendingRows = [];
+let pendingHeaders = [];
+let pendingFilename = '';
+let detectedType = 'creator';
+
+function normHeader(h){ return String(h||'').toLowerCase().replace(/[_\-]/g,' ').replace(/\s+/g,' ').trim(); }
+
+function guessType(headers){
+  const norm = headers.map(normHeader);
+  const creatorHit = ['gmv','commission','affiliate','kol','order','sales','creator'].some(k=>norm.some(h=>h.includes(k)));
+  const analyticsHit = ['profile views','video views','engagement','like count'].some(k=>norm.some(h=>h.includes(k)));
+  if (creatorHit && !analyticsHit) return 'creator';
+  if (analyticsHit && !creatorHit) return 'analytics';
+  return norm.some(h=>h.includes('creator')||h.includes('username')||h.includes('kol')) ? 'creator' : 'analytics';
+}
+
+function bestMatch(headers, aliases){
+  const norm = headers.map(normHeader);
+  for (const a of aliases){
+    const idx = norm.findIndex(h=>h===a);
+    if (idx>-1) return headers[idx];
+  }
+  for (const a of aliases){
+    const idx = norm.findIndex(h=>h.includes(a));
+    if (idx>-1) return headers[idx];
+  }
+  return '';
+}
+
+/* ---------- file handling ---------- */
+const fileInput = document.getElementById('fileInput');
+const dropzone = document.getElementById('dropzone');
+fileInput.addEventListener('change', e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+['dragover','dragenter'].forEach(ev=>dropzone.addEventListener(ev, e=>{ e.preventDefault(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev, e=>{ e.preventDefault(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', e=>{ if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+function handleFile(file){
+  pendingFilename = file.name;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext==='csv'){
+    Papa.parse(file, { header:true, skipEmptyLines:true, complete: res=>{
+      pendingHeaders = res.meta.fields || [];
+      pendingRows = res.data;
+      openMapModal();
+    }});
+  } else {
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+      pendingHeaders = rows.length ? Object.keys(rows[0]) : [];
+      pendingRows = rows;
+      openMapModal();
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+/* ---------- mapping modal ---------- */
+function openMapModal(){
+  if (!pendingHeaders.length || !pendingRows.length){
+    alert('Could not find any rows in this file. Check it has a header row.');
+    return;
+  }
+  detectedType = guessType(pendingHeaders);
+  document.querySelector(`input[name=dataType][value=${detectedType}]`).checked = true;
+  refreshTypeLabels();
+  renderMapFields();
+  document.getElementById('mapModal').classList.add('open');
+}
+document.querySelectorAll('input[name=dataType]').forEach(r=>r.addEventListener('change', ()=>{
+  detectedType = document.querySelector('input[name=dataType]:checked').value;
+  refreshTypeLabels();
+  renderMapFields();
+}));
+function refreshTypeLabels(){
+  document.getElementById('typeLabelCreator').classList.toggle('checked', detectedType==='creator');
+  document.getElementById('typeLabelAnalytics').classList.toggle('checked', detectedType==='analytics');
+}
+function renderMapFields(){
+  const fields = detectedType==='creator' ? CREATOR_FIELDS : ANALYTICS_FIELDS;
+  const container = document.getElementById('mapFields');
+  container.innerHTML = '';
+  fields.forEach(f=>{
+    const guess = bestMatch(pendingHeaders, f.aliases);
+    const row = document.createElement('div');
+    row.className = 'map-row';
+    row.innerHTML = `<div class="field">${f.label}</div>
+      <select data-field="${f.key}">
+        <option value="">Not in this file</option>
+        ${pendingHeaders.map(h=>`<option value="${h}" ${h===guess?'selected':''}>${h}</option>`).join('')}
+      </select>`;
+    container.appendChild(row);
+  });
+}
+function closeMapModal(){
+  document.getElementById('mapModal').classList.remove('open');
+  fileInput.value = '';
+}
+function confirmImport(){
+  const selects = document.querySelectorAll('#mapFields select');
+  const mapping = {};
+  selects.forEach(s=>{ if(s.value) mapping[s.dataset.field] = s.value; });
+
+  const normalizedRows = pendingRows.map(r=>{
+    const out = {};
+    Object.keys(mapping).forEach(k=>{
+      let v = r[mapping[k]];
+      if (['followers','views','orders','gmv','commission','likes','comments','shares','profileViews'].includes(k)){
+        v = parseFloat(String(v).replace(/[^0-9.\-]/g,'')) || 0;
+      }
+      out[k] = v;
+    });
+    return out;
+  }).filter(r=>Object.keys(r).length>0);
+
+  const key = detectedType==='creator' ? STORE_KEYS.creators : STORE_KEYS.analytics;
+  const existing = load(key);
+  save(key, existing.concat(normalizedRows));
+
+  const uploads = load(STORE_KEYS.uploads);
+  uploads.unshift({ id:Date.now(), filename:pendingFilename, type:detectedType, rows:normalizedRows.length, at:new Date().toISOString() });
+  save(STORE_KEYS.uploads, uploads);
+
+  closeMapModal();
+  renderAll();
+  switchTab(detectedType==='creator' ? 'creators' : 'analytics');
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>switchTab(t.dataset.tab)));
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+name));
+}
+function goToUpload(){ switchTab('data'); }
+
+/* ---------- formatting ---------- */
+const fmtNum = n => Intl.NumberFormat('en-US', {notation: n>=100000?'compact':'standard', maximumFractionDigits:1}).format(n||0);
+const fmtMoney = n => '$' + Intl.NumberFormat('en-US', {notation: n>=100000?'compact':'standard', maximumFractionDigits:1}).format(n||0);
+
+/* ---------- charts ---------- */
+let chartRefs = {};
+function upsertChart(id, config){
+  if (chartRefs[id]) chartRefs[id].destroy();
+  chartRefs[id] = new Chart(document.getElementById(id), config);
+}
+const CHART_COLORS = { stamp:'#7A2E3B', mint:'#1F6F5C', brass:'#B8862E', ink:'#14171C' };
+function baseOptions(extra){
+  return Object.assign({ responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{display:false} },
+    scales:{ y:{ grid:{color:'#E1E0D9'}, ticks:{color:'#5B6169', font:{family:'IBM Plex Mono', size:11}} },
+             x:{ grid:{display:false}, ticks:{color:'#5B6169', font:{family:'IBM Plex Mono', size:11}} } }
+  }, extra||{});
+}
+
+/* ---------- render: overview ---------- */
+function renderOverview(creators, analytics){
+  const hasData = creators.length || analytics.length;
+  document.getElementById('overviewEmpty').style.display = hasData ? 'none':'block';
+  document.getElementById('overviewCharts').style.display = hasData ? 'block':'none';
+  document.getElementById('overviewKpis').style.display = hasData ? 'grid':'none';
+  if (!hasData) return;
+
+  const totalGmv = creators.reduce((s,r)=>s+(r.gmv||0),0);
+  const totalCommission = creators.reduce((s,r)=>s+(r.commission||0),0);
+  const totalOrders = creators.reduce((s,r)=>s+(r.orders||0),0);
+  const uniqueCreators = new Set(creators.map(r=>r.creator).filter(Boolean)).size;
+  const totalViews = analytics.reduce((s,r)=>s+(r.views||0),0);
+  const totalLikes = analytics.reduce((s,r)=>s+(r.likes||0),0);
+
+  const kpis = [
+    {lbl:'Total GMV', val:fmtMoney(totalGmv)},
+    {lbl:'Total commission', val:fmtMoney(totalCommission)},
+    {lbl:'Total orders', val:fmtNum(totalOrders)},
+    {lbl:'Creators tracked', val:fmtNum(uniqueCreators)},
+    {lbl:'Video views', val:fmtNum(totalViews)},
+    {lbl:'Total likes', val:fmtNum(totalLikes)}
+  ];
+  document.getElementById('overviewKpis').innerHTML = kpis.map(k=>`<div class="kpi"><div class="lbl">${k.lbl}</div><div class="val">${k.val}</div></div>`).join('');
+
+  const byCreator = {};
+  creators.forEach(r=>{ if(!r.creator) return; byCreator[r.creator] = (byCreator[r.creator]||0) + (r.gmv||0); });
+  const top = Object.entries(byCreator).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  upsertChart('overviewCreatorChart', { type:'bar',
+    data:{ labels:top.map(t=>t[0]), datasets:[{ data:top.map(t=>t[1]), backgroundColor:CHART_COLORS.stamp, borderRadius:4, maxBarThickness:28 }] },
+    options: baseOptions() });
+
+  const byDate = {};
+  analytics.forEach(r=>{ if(!r.date) return; byDate[r.date] = (byDate[r.date]||0) + (r.views||0); });
+  const dateEntries = Object.entries(byDate).sort((a,b)=>new Date(a[0])-new Date(b[0]));
+  upsertChart('overviewViewsChart', { type:'line',
+    data:{ labels:dateEntries.map(d=>d[0]), datasets:[{ data:dateEntries.map(d=>d[1]), borderColor:CHART_COLORS.mint, backgroundColor:'rgba(31,111,92,0.1)', fill:true, tension:0.3, pointRadius:0, borderWidth:2 }] },
+    options: baseOptions() });
+}
+
+/* ---------- render: creators ---------- */
+let creatorSortKey = 'gmv';
+function renderCreators(creators){
+  document.getElementById('creatorsEmpty').style.display = creators.length ? 'none':'block';
+  document.getElementById('creatorsContent').style.display = creators.length ? 'block':'none';
+  if (!creators.length) return;
+
+  const byCreator = {};
+  creators.forEach(r=>{
+    const name = r.creator || 'Unknown';
+    if (!byCreator[name]) byCreator[name] = {creator:name, followers:0, views:0, orders:0, gmv:0, commission:0};
+    const agg = byCreator[name];
+    agg.followers = Math.max(agg.followers, r.followers||0);
+    agg.views += r.views||0; agg.orders += r.orders||0; agg.gmv += r.gmv||0; agg.commission += r.commission||0;
+  });
+  let rows = Object.values(byCreator);
+
+  document.getElementById('creatorsKpis').innerHTML = [
+    {lbl:'Total GMV', val:fmtMoney(rows.reduce((s,r)=>s+r.gmv,0))},
+    {lbl:'Total commission', val:fmtMoney(rows.reduce((s,r)=>s+r.commission,0))},
+    {lbl:'Total orders', val:fmtNum(rows.reduce((s,r)=>s+r.orders,0))},
+    {lbl:'Active creators', val:fmtNum(rows.length)}
+  ].map(k=>`<div class="kpi"><div class="lbl">${k.lbl}</div><div class="val">${k.val}</div></div>`).join('');
+
+  rows.sort((a,b)=>b[creatorSortKey]-a[creatorSortKey]);
+
+  const top10 = rows.slice(0,10);
+  upsertChart('creatorsChart', { type:'bar',
+    data:{ labels:top10.map(r=>r.creator), datasets:[{ data:top10.map(r=>r.gmv), backgroundColor:CHART_COLORS.stamp, borderRadius:4, maxBarThickness:28 }] },
+    options: baseOptions({ indexAxis:'y' }) });
+
+  const tbody = document.querySelector('#creatorsTable tbody');
+  tbody.innerHTML = rows.map((r,i)=>`<tr>
+    <td>${i<3?`<span class="rank">${i+1}</span>`:''}${r.creator}</td>
+    <td class="num">${fmtNum(r.followers)}</td>
+    <td class="num">${fmtNum(r.views)}</td>
+    <td class="num">${fmtNum(r.orders)}</td>
+    <td class="num">${fmtMoney(r.gmv)}</td>
+    <td class="num">${fmtMoney(r.commission)}</td>
+  </tr>`).join('');
+}
+document.getElementById('creatorSort').addEventListener('change', e=>{
+  creatorSortKey = e.target.value;
+  renderCreators(load(STORE_KEYS.creators));
+});
+
+/* ---------- render: analytics ---------- */
+function renderAnalytics(analytics){
+  document.getElementById('analyticsEmpty').style.display = analytics.length ? 'none':'block';
+  document.getElementById('analyticsContent').style.display = analytics.length ? 'block':'none';
+  if (!analytics.length) return;
+
+  const byDate = {};
+  analytics.forEach(r=>{
+    const d = r.date || 'Unknown';
+    if (!byDate[d]) byDate[d] = {date:d, views:0, likes:0, comments:0, shares:0, followers:0};
+    const agg = byDate[d];
+    agg.views += r.views||0; agg.likes += r.likes||0; agg.comments += r.comments||0; agg.shares += r.shares||0;
+    agg.followers = Math.max(agg.followers, r.followers||0);
+  });
+  const rows = Object.values(byDate).sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+  const followerVals = rows.map(r=>r.followers).filter(v=>v>0);
+  const followerGrowth = followerVals.length>1 ? followerVals[followerVals.length-1]-followerVals[0] : 0;
+
+  document.getElementById('analyticsKpis').innerHTML = [
+    {lbl:'Total views', val:fmtNum(rows.reduce((s,r)=>s+r.views,0))},
+    {lbl:'Total likes', val:fmtNum(rows.reduce((s,r)=>s+r.likes,0))},
+    {lbl:'Total comments', val:fmtNum(rows.reduce((s,r)=>s+r.comments,0))},
+    {lbl:'Follower growth', val:(followerGrowth>=0?'+':'')+fmtNum(followerGrowth)}
+  ].map(k=>`<div class="kpi"><div class="lbl">${k.lbl}</div><div class="val">${k.val}</div></div>`).join('');
+
+  upsertChart('analyticsChart', { type:'line',
+    data:{ labels:rows.map(r=>r.date),
+      datasets:[
+        { label:'Views', data:rows.map(r=>r.views), borderColor:CHART_COLORS.mint, borderWidth:2, pointRadius:0, tension:0.3 },
+        { label:'Likes', data:rows.map(r=>r.likes), borderColor:CHART_COLORS.stamp, borderWidth:2, pointRadius:0, tension:0.3, borderDash:[4,3] }
+      ] },
+    options: baseOptions({ plugins:{legend:{display:false}} }) });
+
+  const legendHtml = `<div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px;color:var(--ink-soft);">
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:${CHART_COLORS.mint}"></span>Views</span>
+    <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:${CHART_COLORS.stamp}"></span>Likes</span>
+  </div>`;
+  const chartCard = document.getElementById('analyticsChart').closest('.card');
+  let legendEl = chartCard.querySelector('.chart-legend');
+  if (!legendEl){
+    legendEl = document.createElement('div');
+    legendEl.className = 'chart-legend';
+    chartCard.querySelector('.section-head').after(legendEl);
+  }
+  legendEl.innerHTML = legendHtml;
+
+  const tbody = document.querySelector('#analyticsTable tbody');
+  tbody.innerHTML = rows.map(r=>`<tr>
+    <td>${r.date}</td>
+    <td class="num">${fmtNum(r.views)}</td>
+    <td class="num">${fmtNum(r.likes)}</td>
+    <td class="num">${fmtNum(r.comments)}</td>
+    <td class="num">${fmtNum(r.shares)}</td>
+    <td class="num">${fmtNum(r.followers)}</td>
+  </tr>`).join('');
+}
+
+/* ---------- render: ticker ---------- */
+function renderTicker(creators, analytics){
+  const items = [];
+  if (creators.length){
+    const totalGmv = creators.reduce((s,r)=>s+(r.gmv||0),0);
+    const byCreator = {};
+    creators.forEach(r=>{ if(r.creator) byCreator[r.creator] = (byCreator[r.creator]||0)+(r.gmv||0); });
+    const topCreator = Object.entries(byCreator).sort((a,b)=>b[1]-a[1])[0];
+    items.push({lbl:'Total GMV', val:fmtMoney(totalGmv)});
+    if (topCreator) items.push({lbl:'Top creator', val:`${topCreator[0]} &middot; ${fmtMoney(topCreator[1])}`});
+    items.push({lbl:'Orders', val:fmtNum(creators.reduce((s,r)=>s+(r.orders||0),0))});
+  }
+  if (analytics.length){
+    items.push({lbl:'Video views', val:fmtNum(analytics.reduce((s,r)=>s+(r.views||0),0))});
+    items.push({lbl:'Likes', val:fmtNum(analytics.reduce((s,r)=>s+(r.likes||0),0))});
+  }
+  if (!items.length){
+    items.push({lbl:'Status', val:'Waiting for your first upload'});
+  }
+  const html = items.map(i=>`<span class="ticker-item"><span class="lbl">${i.lbl}</span><span class="val">${i.val}</span></span>`).join('');
+  document.getElementById('tickerTrack').innerHTML = html + html;
+}
+
+/* ---------- render: upload log ---------- */
+function renderUploadLog(){
+  const uploads = load(STORE_KEYS.uploads);
+  const el = document.getElementById('uploadLog');
+  document.getElementById('uploadLogEmpty').style.display = uploads.length ? 'none':'block';
+  el.innerHTML = uploads.map(u=>`<div class="upload-log-row">
+    <div>
+      <div class="name">${u.filename}</div>
+      <div class="meta">${new Date(u.at).toLocaleString()} &middot; ${u.rows} rows</div>
+    </div>
+    <span class="badge ${u.type}">${u.type==='creator'?'Creator':'Analytics'}</span>
+  </div>`).join('');
+}
+
+function clearAllData(){
+  if (!confirm('This clears every upload stored in this browser. Continue?')) return;
+  save(STORE_KEYS.creators, []); save(STORE_KEYS.analytics, []); save(STORE_KEYS.uploads, []);
+  renderAll();
+}
+
+/* ---------- render all ---------- */
+function renderAll(){
+  const creators = load(STORE_KEYS.creators);
+  const analytics = load(STORE_KEYS.analytics);
+  renderTicker(creators, analytics);
+  renderOverview(creators, analytics);
+  renderCreators(creators);
+  renderAnalytics(analytics);
+  renderUploadLog();
+}
+renderAll();
+</script>
+</body>
+</html>
